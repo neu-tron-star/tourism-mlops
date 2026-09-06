@@ -1,0 +1,118 @@
+name: Tourism Project Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+
+  # ============================================================
+  # 1. REGISTER ORIGINAL DATASET
+  # ============================================================
+  register-dataset:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install -r deployment/requirements.txt
+
+      - name: Register dataset on Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_DATASET_REPO: ${{ secrets.HF_DATASET_REPO }}
+        run: python model_building/register_dataset.py
+
+
+  # ============================================================
+  # 2. DATA PREPARATION
+  # ============================================================
+  data-prep:
+
+    needs: register-dataset
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install -r deployment/requirements.txt
+
+      - name: Prepare train and test data
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_DATASET_REPO: ${{ secrets.HF_DATASET_REPO }}
+        run: python model_building/data_prep.py
+
+      - name: Upload prepared data as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prepared-data
+          path: |
+            data/train.csv
+            data/test.csv
+
+
+  # ============================================================
+  # 3. MODEL TRAINING + TUNING + EVALUATION + REGISTRATION
+  # ============================================================
+  model-training:
+
+    needs: data-prep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install -r deployment/requirements.txt
+
+      - name: Prepare data
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_DATASET_REPO: ${{ secrets.HF_DATASET_REPO }}
+        run: python model_building/data_prep.py
+
+      - name: Train, tune, evaluate and register model
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_MODEL_REPO: ${{ secrets.HF_MODEL_REPO }}
+          MLFLOW_TRACKING_URI: file:./mlruns
+        run: python model_building/train.py
+
+      - name: Upload trained model and experiment results
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: |
+            model_building/best_model.joblib
+            model_building/model_comparison.csv
+            mlruns
+
+
+  # ============================================================
+  # 4. DEPLOY FRONTEND TO HUGGING FACE SPACE
+  # ============================================================
+  deploy-hosting:
+
+    needs: [model-training, data-prep, register-dataset]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install -r deployment/requirements.txt
+
+      - name: Push Gradio frontend to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: ${{ secrets.HF_SPACE_REPO }}
+        run: python deployment/hosting.py
