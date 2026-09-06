@@ -1,4 +1,5 @@
 import os
+import spaces
 import joblib
 import pandas as pd
 import gradio as gr
@@ -70,6 +71,7 @@ MODEL, MODEL_STATUS = load_model()
 # Prediction Function
 # ---------------------------------------------------
 
+@spaces.GPU
 def predict(
     age,
     contact,
