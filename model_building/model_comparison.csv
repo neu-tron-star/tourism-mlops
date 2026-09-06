@@ -1,0 +1,4 @@
+Model,CV ROC-AUC,Accuracy,Precision,Recall,F1,Test ROC-AUC,Best Parameters
+Random Forest,0.9386317162031084,0.8991282689912827,0.9404761904761905,0.5096774193548387,0.6610878661087866,0.9681152927120669,"{'model__n_estimators': 300, 'model__min_samples_split': 2, 'model__min_samples_leaf': 1, 'model__max_features': 'log2', 'model__max_depth': None}"
+XGBoost,0.9043250108980843,0.8891656288916563,0.8367346938775511,0.5290322580645161,0.6482213438735178,0.8970131421744326,"{'model__subsample': 1.0, 'model__n_estimators': 350, 'model__max_depth': 4, 'model__learning_rate': 0.1, 'model__colsample_bytree': 0.8}"
+Gradient Boosting,0.8767215671415194,0.8704856787048568,0.7931034482758621,0.44516129032258067,0.5702479338842975,0.8625647152528874,"{'model__n_estimators': 150, 'model__min_samples_leaf': 4, 'model__max_depth': 3, 'model__learning_rate': 0.1}"
